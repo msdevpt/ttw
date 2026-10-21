@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Ttw.Services</RootNamespace>
+    <AssemblyName>Ttw.Services</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ttw.Core\Ttw.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.13" />
+    <!-- Ships the libusb-1.0 native binary for win-x64 and osx-* into the publish
+         output. ExcludeAssets=compile: the package is used for its native assets
+         only, the P/Invoke declarations live in Ttw.Services. -->
+    <PackageReference Include="UsbDotNet.LibUsbNative" Version="1.4.2">
+      <ExcludeAssets>compile;runtime</ExcludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>
