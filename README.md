@@ -9,7 +9,7 @@ over USB and does two things:
   files.
 
 It is a port of the `tui` package of the Java project
-[TomTomWatch](https://github.com/jvandervelde/TomTomWatch) and keeps its
+[TomTomWatch](https://github.com/scubajorgen/TomTomWatch) and keeps its
 behaviour: the same USB wire protocol, the same TTBIN parsing and the same
 GPX and TCX output.
 
