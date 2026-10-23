@@ -3,7 +3,7 @@ namespace Ttw.Services.Usb;
 /// <summary>
 /// Raised when the communication with the watch fails.
 /// </summary>
-public sealed class UsbException : Exception
+public class UsbException : Exception
 {
     /// <summary>Creates an exception with a message.</summary>
     public UsbException(string message)

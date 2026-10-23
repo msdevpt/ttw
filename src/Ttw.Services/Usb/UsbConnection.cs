@@ -194,7 +194,7 @@ public sealed class UsbConnection : IDisposable
 
             if (device == IntPtr.Zero)
             {
-                throw new UsbException("No compatible TomTom watch found");
+                throw new WatchNotFoundException();
             }
 
             LibUsb.Check(LibUsb.libusb_open(device, out handle), "Cannot open the TomTom watch");
@@ -375,7 +375,7 @@ public sealed class UsbConnection : IDisposable
         }
         catch (DllNotFoundException exception)
         {
-            throw new UsbException(
+            throw new UsbLibraryException(
                 "The libusb library could not be loaded; install it with 'pacman -S libusb' on Arch Linux",
                 exception);
         }
@@ -421,7 +421,7 @@ public sealed class UsbConnection : IDisposable
             }
             catch (DllNotFoundException)
             {
-                throw new UsbException("The libusb library could not be loaded");
+                throw new UsbLibraryException("The libusb library could not be loaded");
             }
         }
 
