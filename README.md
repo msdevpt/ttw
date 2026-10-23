@@ -61,6 +61,19 @@ dotnet test
 ttw [command] [options]
 ```
 
+### Global options
+
+| Option | Description |
+| --- | --- |
+| `--verbose` | Show the technical detail of a failure (type, message and the URL that was being fetched) and write the logs at the debug level. Without it, a failure is reported with a message that names the service or the device that failed, without stating a cause. |
+
+The flag can be given before or after the command:
+
+```sh
+ttw --verbose update
+ttw update --verbose
+```
+
 ### `ttw update`
 
 Downloads the ephemeris data for the next three days and writes it to the
