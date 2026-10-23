@@ -84,6 +84,12 @@ the GPS processor is reset.
 ttw update
 ```
 
+The update asks the TomTom config service which ephemeris service to use. That
+request is given 5 seconds; when the service does not answer in that time, the
+default ephemeris service is used instead. The download of the data itself is
+given 60 seconds. Both timeouts cover the whole request, the response headers
+and the body.
+
 ### `ttw activities`
 
 Writes every activity that **started** in the given date range to its own
