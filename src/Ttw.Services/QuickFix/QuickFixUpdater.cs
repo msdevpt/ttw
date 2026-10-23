@@ -128,7 +128,8 @@ public sealed class QuickFixUpdater
         catch (Exception exception) when (
             exception is HttpRequestException or JsonException or TaskCanceledException)
         {
-            _logger.LogInformation(exception, "The TomTom config service is not available");
+            _logger.LogInformation("The TomTom config service did not answer");
+            _logger.LogDebug(exception, "The TomTom config service did not answer: {Url}", configUrl);
         }
 
         if (dataUrl is null)
@@ -183,7 +184,8 @@ public sealed class QuickFixUpdater
         }
         catch (Exception exception) when (exception is UsbException or IOException)
         {
-            _logger.LogError(exception, "Cannot write the quickfix data to the watch");
+            _logger.LogError("Cannot write the quickfix data to the watch");
+            _logger.LogDebug(exception, "Cannot write the quickfix data to the watch");
             return new QuickFixResult(false, writeFailure, dataUrl, 0, Days);
         }
 
@@ -201,7 +203,8 @@ public sealed class QuickFixUpdater
         }
         catch (Exception exception) when (exception is UsbException or IOException)
         {
-            _logger.LogError(exception, "Cannot verify the quickfix data on the watch");
+            _logger.LogError("Cannot verify the quickfix data on the watch");
+            _logger.LogDebug(exception, "Cannot verify the quickfix data on the watch");
             return new QuickFixResult(false, writeFailure, dataUrl, 0, Days);
         }
 
@@ -213,7 +216,8 @@ public sealed class QuickFixUpdater
         }
         catch (Exception exception) when (exception is UsbException or IOException)
         {
-            _logger.LogError(exception, "Cannot reset the GPS processor of the watch");
+            _logger.LogError("Cannot reset the GPS processor of the watch");
+            _logger.LogDebug(exception, "Cannot reset the GPS processor of the watch");
             return new QuickFixResult(false, writeFailure, dataUrl, 0, Days);
         }
 

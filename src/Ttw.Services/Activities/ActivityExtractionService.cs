@@ -111,8 +111,11 @@ public sealed class ActivityExtractionService
             catch (Exception exception)
             {
                 _logger.LogInformation(
-                    exception,
                     "Skipping undecodable file 0x{FileId:x8}",
+                    file.FileId);
+                _logger.LogDebug(
+                    exception,
+                    "Cannot decode file 0x{FileId:x8}",
                     file.FileId);
                 skipped.Add(string.Format(CultureInfo.InvariantCulture, "0x{0:x8}", file.FileId));
                 continue;
@@ -193,7 +196,8 @@ public sealed class ActivityExtractionService
         }
         catch (Exception exception) when (exception is UsbException or IOException)
         {
-            _logger.LogWarning(exception, "Cannot read the preference {Tag} from the watch", tag);
+            _logger.LogWarning("Cannot read the preference {Tag} from the watch", tag);
+            _logger.LogDebug(exception, "Cannot read the preference {Tag} from the watch", tag);
             return null;
         }
     }
