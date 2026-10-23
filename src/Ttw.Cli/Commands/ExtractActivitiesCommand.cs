@@ -1,8 +1,10 @@
 using System.CommandLine;
 using Microsoft.Extensions.Logging;
+using Ttw.Cli;
 using Ttw.Core.Dates;
 using Ttw.Core.Exporting;
 using Ttw.Services.Activities;
+using Ttw.Services.Failures;
 using Ttw.Services.Usb;
 
 namespace Ttw.Cli.Commands;
@@ -15,9 +17,9 @@ public static class ExtractActivitiesCommand
     /// <summary>
     /// Creates the command.
     /// </summary>
-    public static Command Create(ILoggerFactory loggerFactory)
+    public static Command Create(Option<bool> verbose)
     {
-        ArgumentNullException.ThrowIfNull(loggerFactory);
+        ArgumentNullException.ThrowIfNull(verbose);
 
         Option<string> from = new("--from")
         {
@@ -50,6 +52,9 @@ public static class ExtractActivitiesCommand
 
         command.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
         {
+            bool isVerbose = parseResult.GetValue(verbose);
+
+            using ILoggerFactory loggerFactory = CliLogging.CreateFactory(isVerbose);
             ILogger logger = loggerFactory.CreateLogger("ttw.activities");
 
             string fromValue = parseResult.GetValue(from) ?? string.Empty;
@@ -125,7 +130,13 @@ public static class ExtractActivitiesCommand
             catch (Exception exception) when (
                 exception is ExtractionException or UsbException or IOException or OperationCanceledException)
             {
-                Console.Error.WriteLine(exception.Message);
+                Console.Error.WriteLine(FailureMessages.For(exception));
+
+                if (isVerbose)
+                {
+                    Console.Error.WriteLine(TechnicalDetail.From(exception));
+                }
+
                 return 1;
             }
         });

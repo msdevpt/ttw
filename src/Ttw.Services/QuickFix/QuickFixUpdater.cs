@@ -43,11 +43,18 @@ public sealed record QuickFixProgress(string Phase, long DoneBytes, long TotalBy
 /// The outcome of the QuickFix update.
 /// </summary>
 /// <param name="Success">True when the data was written to the watch.</param>
-/// <param name="Error">The reason the update failed, or null.</param>
+/// <param name="Error">The message shown to the user when the update failed, or null.</param>
+/// <param name="Detail">The technical detail of the failure, shown in verbose mode.</param>
 /// <param name="DataUrl">The URL the ephemeris data was downloaded from.</param>
 /// <param name="Bytes">The number of bytes that were downloaded.</param>
 /// <param name="Days">The number of days the data covers.</param>
-public sealed record QuickFixResult(bool Success, string? Error, string DataUrl, int Bytes, int Days);
+public sealed record QuickFixResult(
+    bool Success,
+    string? Error,
+    string? Detail,
+    string DataUrl,
+    int Bytes,
+    int Days);
 
 /// <summary>
 /// Downloads the GPS QuickFix data and writes it to the watch.
@@ -104,12 +111,10 @@ public sealed class QuickFixUpdater
         string? configUrl = _watch.GetPreference("ConfigURL");
         if (configUrl is null)
         {
-            return new QuickFixResult(
-                false,
+            return Failed(
                 "Could not read the configuration URL from the watch.",
-                string.Empty,
-                0,
-                Days);
+                detail: null,
+                dataUrl: string.Empty);
         }
 
         configUrl = configUrl.Trim();
@@ -118,10 +123,13 @@ public sealed class QuickFixUpdater
         progress?.Report(new QuickFixProgress(QuickFixPhase.FetchingConfig, 0, -1));
 
         string? dataUrl = null;
+        bool configAnswered = false;
 
         try
         {
             string config = await _fetcher.GetStringAsync(configUrl, cancellationToken).ConfigureAwait(false);
+
+            configAnswered = true;
 
             using JsonDocument document = JsonDocument.Parse(config);
             if (document.RootElement.TryGetProperty("service:ephemeris", out JsonElement ephemeris))
@@ -136,13 +144,20 @@ public sealed class QuickFixUpdater
         catch (Exception exception) when (
             exception is HttpRequestException or JsonException or TaskCanceledException)
         {
-            _logger.LogInformation("The TomTom config service did not answer");
+            _logger.LogInformation(
+                "The TomTom config service did not answer; using the ephemeris service directly");
             _logger.LogDebug(exception, "The TomTom config service did not answer: {Url}", configUrl);
         }
 
         if (dataUrl is null)
         {
-            _logger.LogInformation("TomTom config service not found: trying ephemeris service");
+            if (configAnswered)
+            {
+                _logger.LogInformation(
+                    "The TomTom config service did not name the ephemeris service; "
+                    + "using the default ephemeris service directly");
+            }
+
             dataUrl = FallbackEphemerisUrl;
         }
 
@@ -166,18 +181,18 @@ public sealed class QuickFixUpdater
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
-            _logger.LogDebug(exception, "Cannot download the ephemeris data: {Url}", dataUrl);
-            return new QuickFixResult(false, EphemerisUnavailableMessage, dataUrl, 0, Days);
+            return Failed(
+                EphemerisUnavailableMessage,
+                TechnicalDetail.From(exception, dataUrl),
+                dataUrl);
         }
 
         if (data.Length == 0)
         {
-            return new QuickFixResult(
-                false,
+            return Failed(
                 "The ephemeris data downloaded from the TomTom service is empty.",
-                dataUrl,
-                0,
-                Days);
+                detail: null,
+                dataUrl);
         }
 
         _logger.LogInformation("Quickfix data downloaded: {Bytes} bytes", data.Length);
@@ -190,14 +205,10 @@ public sealed class QuickFixUpdater
         }
         catch (Exception exception) when (exception is UsbException or IOException)
         {
-            _logger.LogError("Cannot write the quickfix data to the watch");
-            _logger.LogDebug(exception, "Cannot write the quickfix data to the watch");
-            return new QuickFixResult(
-                false,
+            return Failed(
                 FailureMessages.For(exception),
-                dataUrl,
-                0,
-                Days);
+                TechnicalDetail.From(exception),
+                dataUrl);
         }
 
         progress?.Report(new QuickFixProgress(QuickFixPhase.Verifying, 0, data.Length));
@@ -208,25 +219,18 @@ public sealed class QuickFixUpdater
 
             if (readBack.Length != data.Length || !readBack.AsSpan().SequenceEqual(data))
             {
-                _logger.LogError("The quickfix data read back from the watch does not match");
-                return new QuickFixResult(
-                    false,
+                return Failed(
                     "The ephemeris data written to the watch could not be read back.",
-                    dataUrl,
-                    0,
-                    Days);
+                    detail: null,
+                    dataUrl);
             }
         }
         catch (Exception exception) when (exception is UsbException or IOException)
         {
-            _logger.LogError("Cannot verify the quickfix data on the watch");
-            _logger.LogDebug(exception, "Cannot verify the quickfix data on the watch");
-            return new QuickFixResult(
-                false,
+            return Failed(
                 FailureMessages.For(exception),
-                dataUrl,
-                0,
-                Days);
+                TechnicalDetail.From(exception),
+                dataUrl);
         }
 
         progress?.Report(new QuickFixProgress(QuickFixPhase.ResettingGps, 0, 0));
@@ -237,18 +241,17 @@ public sealed class QuickFixUpdater
         }
         catch (Exception exception) when (exception is UsbException or IOException)
         {
-            _logger.LogError("Cannot reset the GPS processor of the watch");
-            _logger.LogDebug(exception, "Cannot reset the GPS processor of the watch");
-            return new QuickFixResult(
-                false,
+            return Failed(
                 FailureMessages.For(exception),
-                dataUrl,
-                0,
-                Days);
+                TechnicalDetail.From(exception),
+                dataUrl);
         }
 
         _logger.LogInformation("GPS Quickfix data sent to watch");
 
-        return new QuickFixResult(true, null, dataUrl, data.Length, Days);
+        return new QuickFixResult(true, null, null, dataUrl, data.Length, Days);
     }
+
+    private static QuickFixResult Failed(string error, string? detail, string dataUrl) =>
+        new(false, error, detail, dataUrl, 0, Days);
 }

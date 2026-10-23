@@ -1,17 +1,15 @@
 using System.CommandLine;
-using Microsoft.Extensions.Logging;
 using Ttw.Cli.Commands;
 
-using ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder
-    .AddSimpleConsole(options =>
-    {
-        options.SingleLine = true;
-        options.TimestampFormat = "HH:mm:ss ";
-    })
-    .SetMinimumLevel(LogLevel.Information));
+Option<bool> verbose = new("--verbose")
+{
+    Description = "Show the technical detail of a failure and the debug logs",
+    Recursive = true,
+};
 
 RootCommand root = new("ttw - TomTom sports watch command line tool");
-root.Add(UpdateQuickGpsCommand.Create(loggerFactory));
-root.Add(ExtractActivitiesCommand.Create(loggerFactory));
+root.Add(verbose);
+root.Add(UpdateQuickGpsCommand.Create(verbose));
+root.Add(ExtractActivitiesCommand.Create(verbose));
 
 return await root.Parse(args).InvokeAsync();

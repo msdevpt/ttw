@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Microsoft.Extensions.Logging;
 using Ttw.Cli;
+using Ttw.Services.Failures;
 using Ttw.Services.Http;
 using Ttw.Services.QuickFix;
 using Ttw.Services.Usb;
@@ -15,14 +16,17 @@ public static class UpdateQuickGpsCommand
     /// <summary>
     /// Creates the command.
     /// </summary>
-    public static Command Create(ILoggerFactory loggerFactory)
+    public static Command Create(Option<bool> verbose)
     {
-        ArgumentNullException.ThrowIfNull(loggerFactory);
+        ArgumentNullException.ThrowIfNull(verbose);
 
         Command command = new("update", "Update the GPS QuickFix data on the watch");
 
-        command.SetAction(async (ParseResult _, CancellationToken cancellationToken) =>
+        command.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
         {
+            bool isVerbose = parseResult.GetValue(verbose);
+
+            using ILoggerFactory loggerFactory = CliLogging.CreateFactory(isVerbose);
             ILogger logger = loggerFactory.CreateLogger("ttw.update");
 
             try
@@ -39,6 +43,12 @@ public static class UpdateQuickGpsCommand
                 if (!result.Success)
                 {
                     Console.Error.WriteLine(result.Error ?? "The QuickFix update failed");
+
+                    if (isVerbose && result.Detail is not null)
+                    {
+                        Console.Error.WriteLine(result.Detail);
+                    }
+
                     return 1;
                 }
 
@@ -47,7 +57,13 @@ public static class UpdateQuickGpsCommand
             catch (Exception exception) when (
                 exception is UsbException or HttpRequestException or IOException or OperationCanceledException)
             {
-                Console.Error.WriteLine(exception.Message);
+                Console.Error.WriteLine(FailureMessages.For(exception));
+
+                if (isVerbose)
+                {
+                    Console.Error.WriteLine(TechnicalDetail.From(exception));
+                }
+
                 return 1;
             }
         });
