@@ -63,14 +63,14 @@ public sealed class QuickFixUpdater
     public const string FallbackEphemerisUrl =
         "http://gpsquickfix.services.tomtom.com/fitness/sifgps.f2p{DAYS}enc.ee";
 
-    private readonly WatchClient _watch;
-    private readonly HttpDataFetcher _fetcher;
+    private readonly IQuickFixWatch _watch;
+    private readonly IDataFetcher _fetcher;
     private readonly ILogger _logger;
 
     /// <summary>
     /// Creates the updater.
     /// </summary>
-    public QuickFixUpdater(WatchClient watch, HttpDataFetcher fetcher, ILogger logger)
+    public QuickFixUpdater(IQuickFixWatch watch, IDataFetcher fetcher, ILogger logger)
     {
         ArgumentNullException.ThrowIfNull(watch);
         ArgumentNullException.ThrowIfNull(fetcher);

@@ -7,7 +7,7 @@ namespace Ttw.Services.Usb;
 /// The file operations the watch protocol offers, on top of a
 /// <see cref="UsbConnection"/>.
 /// </summary>
-public sealed class WatchClient : IDisposable
+public sealed class WatchClient : IQuickFixWatch, IActivityWatch, IDisposable
 {
     /// <summary>File id of the GPS QuickFix data.</summary>
     public const int FileIdQuickFixData = 0x00010100;

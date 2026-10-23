@@ -37,13 +37,13 @@ public sealed class ActivityExtractionService
     /// <summary>The name of the application, written into the exported files.</summary>
     public const string AppName = "ttw";
 
-    private readonly WatchClient _watch;
+    private readonly IActivityWatch _watch;
     private readonly ILogger _logger;
 
     /// <summary>
     /// Creates the service.
     /// </summary>
-    public ActivityExtractionService(WatchClient watch, ILogger logger)
+    public ActivityExtractionService(IActivityWatch watch, ILogger logger)
     {
         ArgumentNullException.ThrowIfNull(watch);
         ArgumentNullException.ThrowIfNull(logger);

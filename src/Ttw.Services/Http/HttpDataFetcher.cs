@@ -12,7 +12,7 @@ public readonly record struct DownloadProgress(long TotalBytes, long DownloadedB
 /// <summary>
 /// Downloads the configuration and the ephemeris data of the TomTom services.
 /// </summary>
-public sealed class HttpDataFetcher
+public sealed class HttpDataFetcher : IDataFetcher
 {
     /// <summary>The size of the chunks the response body is copied in.</summary>
     private const int ChunkSize = 4096;
